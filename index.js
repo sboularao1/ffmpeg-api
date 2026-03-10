@@ -10,7 +10,7 @@ app.post('/merge', async (req, res) => {
   const { videoUrl, audioUrl } = req.body;
 
     const videoPath = '/tmp/video.mp4';
-      const audioPath = '/tmp/audio.wav';
+      const audioPath = '/tmp/audio.mp3';
         const outputPath = '/tmp/final.mp4';
 
           try {
