@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: ffmpeg-api
+    env: node
+    buildCommand: pip install edge-tts && npm install
+    startCommand: node index.js
