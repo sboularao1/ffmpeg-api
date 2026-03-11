@@ -8,6 +8,6 @@
     "fluent-ffmpeg": "^2.1.2"
   },
   "scripts": {
-    "start": "pip install edge-tts && node index.js"
+    "start": "node index.js"
   }
 }
