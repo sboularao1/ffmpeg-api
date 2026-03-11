@@ -45,6 +45,7 @@ console.log('Audio file size:', audioSize);
       })
       .on('end', () => {
         console.log('FFmpeg finished');
+        console.log('Output file size:', fs.statSync(outputPath).size);
         const finalVideo = fs.readFileSync(outputPath);
         res.setHeader('Content-Type', 'video/mp4');
         res.send(finalVideo);
