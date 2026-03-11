@@ -38,7 +38,11 @@ app.post('/merge', async (req, res) => {
       .input(audioPath)
       .outputOptions(['-shortest', '-c:v copy', '-c:a aac'])
       .save(outputPath)
+      .on('start', (cmd) => {
+        console.log('FFmpeg started:', cmd);
+      })
       .on('end', () => {
+        console.log('FFmpeg finished');
         const finalVideo = fs.readFileSync(outputPath);
         res.setHeader('Content-Type', 'video/mp4');
         res.send(finalVideo);
