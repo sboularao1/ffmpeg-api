@@ -30,7 +30,7 @@ app.post('/merge', async (req, res) => {
     console.log('Video downloaded');
 
     const safeText = text.replace(/"/g, "'");
-    await execAsync(`edge-tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
+    await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
     console.log('Audio generated');
 
     ffmpeg()
