@@ -29,7 +29,7 @@ app.post('/merge', async (req, res) => {
     fs.writeFileSync(videoPath, Buffer.from(await videoRes.arrayBuffer()));
     console.log('Video downloaded');
 
-    const safeText = text.replace(/"/g, "'");
+    const safeText = text.replace(/[^a-zA-Z0-9\s.,!?'-]/g, ' ').replace(/\s+/g, ' ').trim();
     await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
     console.log('Audio generated');
 
