@@ -32,7 +32,9 @@ app.post('/merge', async (req, res) => {
     const safeText = text.replace(/[^a-zA-Z0-9\s.,!?'-]/g, ' ').replace(/\s+/g, ' ').trim();
     await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
     console.log('Audio generated');
-
+const audioSize = fs.statSync(audioPath).size;
+console.log('Audio file size:', audioSize);
+    
     ffmpeg()
       .input(videoPath)
       .input(audioPath)
