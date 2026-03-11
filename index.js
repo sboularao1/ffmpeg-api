@@ -38,7 +38,7 @@ console.log('Audio file size:', audioSize);
     ffmpeg()
       .input(videoPath)
       .input(audioPath)
-      .outputOptions(['-shortest', '-c:v copy', '-c:a aac'])
+      .outputOptions(['-shortest'])
       .save(outputPath)
       .on('start', (cmd) => {
         console.log('FFmpeg started:', cmd);
