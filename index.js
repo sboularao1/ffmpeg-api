@@ -34,24 +34,19 @@ app.post('/merge', async (req, res) => {
     console.log('Audio generated');
 
     ffmpeg()
-      .input(videoPath)
-      .input(audioPath)
-      .outputOptions('-shortest')
-      .save(outputPath)
-      .on('end', () => {
-        const finalVideo = fs.readFileSync(outputPath);
-        res.setHeader('Content-Type', 'video/mp4');
-        res.send(finalVideo);
-      })
-      .on('error', (err) => {
-        console.log('FFmpeg error:', err.message);
-        res.status(500).json({ error: err.message });
-      });
-  } catch (err) {
-    console.log('Error:', err.message);
+  .input(videoPath)
+  .input(audioPath)
+  .outputOptions(['-shortest', '-c:v copy', '-c:a aac'])
+  .save(outputPath)
+  .on('end', () => {
+    const finalVideo = fs.readFileSync(outputPath);
+    res.setHeader('Content-Type', 'video/mp4');
+    res.send(finalVideo);
+  })
+  .on('error', (err) => {
+    console.log('FFmpeg error:', err.message);
     res.status(500).json({ error: err.message });
-  }
-});
+  });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`FFmpeg API running on port ${PORT}`));
