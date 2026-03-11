@@ -12,7 +12,7 @@ app.use(express.json({ limit: '50mb' }));
 // دمج فيديو واحد مع صوت section واحد
 app.post('/merge-section', async (req, res) => {
   const { videoUrl, text, language, order } = req.body;
-
+console.log('Received:', { videoUrl, order, language });
   const videoPath = `/tmp/video_${order}.mp4`;
   const audioPath = `/tmp/audio_${order}.mp3`;
   const outputPath = `/tmp/section_${order}.mp4`;
