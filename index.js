@@ -8,17 +8,6 @@ const execAsync = promisify(exec);
 
 const app = express();
 app.use(express.json({ limit: '50mb' }));
-app.get('/test-audio', async (req, res) => {
-  const audioPath = '/tmp/test-audio.mp3';
-  try {
-    await execAsync(`python3 -m edge_tts --voice en-US-JennyNeural --text "Hello this is a test" --write-media ${audioPath}`);
-    const audio = fs.readFileSync(audioPath);
-    res.setHeader('Content-Type', 'audio/mp3');
-    res.send(audio);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 app.post('/merge', async (req, res) => {
   const { videoUrl, text, language } = req.body;
