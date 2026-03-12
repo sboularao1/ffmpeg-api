@@ -104,8 +104,10 @@ const safeText = text
   }
 });
 
-app.post('/concat-saved', async (req, res) => {
-  const { orders } = req.body;
+app.post('/save-section', async (req, res) => {
+  const { videoUrl, text, language, order } = req.body;
+  console.log('Language received:', language);
+  console.log('Voice selected:', voice);
 
   try {
     const concatPath = '/tmp/concat.txt';
