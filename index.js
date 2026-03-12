@@ -31,7 +31,10 @@ console.log('Received:', { videoUrl, order, language });
     console.log(`Section ${order} video downloaded`);
 
     // توليد الصوت
-    const safeText = text.replace(/[^a-zA-Z0-9\u0600-\u06FF\s.,!?'-]/g, ' ').replace(/\s+/g, ' ').trim();
+    const safeText = text
+  .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\w\s.,!?'-]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
     await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
     console.log(`Section ${order} audio generated`);
 
@@ -76,7 +79,10 @@ app.post('/save-section', async (req, res) => {
     const videoRes = await fetch(videoUrl);
     fs.writeFileSync(videoPath, Buffer.from(await videoRes.arrayBuffer()));
 
-    const safeText = text.replace(/[^a-zA-Z0-9\u0600-\u06FF\s.,!?'-]/g, ' ').replace(/\s+/g, ' ').trim();
+const safeText = text
+  .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\w\s.,!?'-]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
     await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
 
     await new Promise((resolve, reject) => {
