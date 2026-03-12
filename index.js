@@ -61,7 +61,9 @@ console.log('Received:', { videoUrl, order, language });
 // دمج كل المقاطع في فيديو واحد
 app.post('/concat', async (req, res) => {
   const { videos } = req.body; // قائمة base64 videos
-
+console.log('Videos count:', videos?.length);
+  console.log('First video type:', typeof videos?.[0]);
+  console.log('First video length:', videos?.[0]?.length);
   try {
     const videoPaths = [];
     for (let i = 0; i < videos.length; i++) {
