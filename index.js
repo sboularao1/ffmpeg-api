@@ -42,7 +42,7 @@ console.log('Received:', { videoUrl, order, language });
     ffmpeg()
       .input(videoPath)
       .input(audioPath)
-      .outputOptions(['-shortest', '-map 0:v:0', '-map 1:a:0', '-c:v libx264', '-c:a aac', '-strict experimental'])
+      .outputOptions(['-shortest', '-map 0:v:0', '-map 1:a:0', '-c:v libx264', '-crf 28', '-preset ultrafast', '-c:a aac', '-strict experimental'])
       .save(outputPath)
       .on('end', () => {
         console.log(`Section ${order} merged`);
@@ -89,7 +89,7 @@ const safeText = text
       ffmpeg()
         .input(videoPath)
         .input(audioPath)
-        .outputOptions(['-shortest', '-map 0:v:0', '-map 1:a:0', '-c:v libx264', '-c:a aac', '-strict experimental'])
+        .outputOptions(['-shortest', '-map 0:v:0', '-map 1:a:0', '-c:v libx264', '-crf 28', '-preset ultrafast', '-c:a aac', '-strict experimental'])
         .save(outputPath)
         .on('end', resolve)
         .on('error', reject);
