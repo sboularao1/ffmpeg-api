@@ -125,6 +125,16 @@ app.post('/concat-saved', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+app.get('/check-sections', (req, res) => {
+  const sections = [];
+  for (let i = 1; i <= 10; i++) {
+    const path = `/tmp/section_${i}.mp4`;
+    if (fs.existsSync(path)) {
+      sections.push({ order: i, size: fs.statSync(path).size });
+    }
+  }
+  res.json({ sections, count: sections.length });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`FFmpeg API running on port ${PORT}`));
