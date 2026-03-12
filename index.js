@@ -58,7 +58,6 @@ console.log('Received:', { videoUrl, order, language });
   }
 });
 
-/save-section:
 app.post('/save-section', async (req, res) => {
   const { videoUrl, text, language, order } = req.body;
 
