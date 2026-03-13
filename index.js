@@ -69,10 +69,18 @@ app.post('/save-section', async (req, res) => {
     const { stdout } = await execAsync(`ffprobe -v quiet -show_entries format=duration -of csv=p=0 ${audioPath}`);
     const audioDuration = parseFloat(stdout.trim());
     console.log(`[save-section] audio duration: ${audioDuration}s`);
-
-    // 3. تحميل الـ background
-    const bgRes = await fetch(background.url);
-    const bgBuffer = Buffer.from(await bgRes.arrayBuffer());
+    
+// 3. تحميل الـ background
+const bgResponse = await new Promise((resolve, reject) => {
+  const protocol = background.url.startsWith('https') ? require('https') : require('http');
+  protocol.get(background.url, (res) => {
+    const chunks = [];
+    res.on('data', chunk => chunks.push(chunk));
+    res.on('end', () => resolve(Buffer.concat(chunks)));
+    res.on('error', reject);
+  });
+});
+const bgBuffer = bgResponse;
 
     if (background.type === 'video') {
       // background فيديو — يتكرر حتى ينتهي الصوت
