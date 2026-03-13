@@ -79,12 +79,19 @@ app.post('/save-section', async (req, res) => {
     // 4. دمج الفيديو مع الصوت
     // -stream_loop -1 : يكرر الفيديو لا نهائياً
     // بدون -shortest : الفيديو يتوقف عند انتهاء الصوت وليس العكس
+    const { stdout } = await execAsync(
+      `ffprobe -v quiet -show_entries format=duration -of csv=p=0 ${audioPath}`
+    );
+    const audioDuration = parseFloat(stdout.trim());
+    console.log(`[save-section] audio duration: ${audioDuration}s`);
+
     await new Promise((resolve, reject) => {
       ffmpeg()
         .input(videoPath)
         .inputOptions(['-stream_loop -1'])
         .input(audioPath)
         .outputOptions([
+          `-t ${audioDuration}`,
           '-map 0:v:0',
           '-map 1:a:0',
           '-c:v libx264',
@@ -96,7 +103,7 @@ app.post('/save-section', async (req, res) => {
         .save(outputPath)
         .on('start', cmd => console.log(`[save-section] FFmpeg cmd: ${cmd}`))
         .on('end', () => {
-          console.log(`[save-section] section ${order} saved, size=${fs.statSync(outputPath).size}`);
+          console.log(`[save-section] done, size=${fs.statSync(outputPath).size}`);
           resolve();
         })
         .on('error', reject);
