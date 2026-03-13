@@ -40,14 +40,13 @@ app.get('/get-section/:order', (req, res) => {
   }
 });
 
-// ✅ حفظ section واحد (فيديو + صوت) في /tmp
-// يُستدعى من Loop في n8n — يرجع { success: true, order: N }
+// ✅ حفظ section واحد — الطبقة 1: background + TTS audio
 app.post('/save-section', async (req, res) => {
-  const { videoUrl, text, language, order } = req.body;
+  const { order, text, language, background } = req.body;
   console.log(`[save-section] order=${order} language=${language}`);
-  console.log(`[save-section] videoUrl=${videoUrl}`);
 
-  const videoPath = `/tmp/video_${order}.mp4`;
+  const videoPath = `/tmp/bg_${order}.mp4`;
+  const imagePath = `/tmp/bg_${order}.jpg`;
   const audioPath = `/tmp/audio_${order}.mp3`;
   const outputPath = `/tmp/section_${order}.mp4`;
 
@@ -57,59 +56,74 @@ app.post('/save-section', async (req, res) => {
     'english': 'en-US-JennyNeural'
   };
   const voice = voiceMap[language?.toLowerCase()] || 'en-US-JennyNeural';
-  console.log(`[save-section] voice=${voice}`);
 
   try {
-    // 1. تحميل الفيديو
-    const videoRes = await fetch(videoUrl);
-    fs.writeFileSync(videoPath, Buffer.from(await videoRes.arrayBuffer()));
-    console.log(`[save-section] video downloaded, size=${fs.statSync(videoPath).size}`);
-
-    // 2. تنظيف النص — يدعم العربية والإنجليزية والفرنسية
+    // 1. تنظيف النص
     const safeText = text
       .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\w\s.,!?'-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
-    // 3. توليد الصوت
+    // 2. توليد الصوت
     await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
-    const audioSize = fs.statSync(audioPath).size;
-    console.log(`[save-section] audio generated, size=${audioSize}`);
-
-    // 4. دمج الفيديو مع الصوت
-    // -stream_loop -1 : يكرر الفيديو لا نهائياً
-    // بدون -shortest : الفيديو يتوقف عند انتهاء الصوت وليس العكس
-    const { stdout } = await execAsync(
-      `ffprobe -v quiet -show_entries format=duration -of csv=p=0 ${audioPath}`
-    );
+    const { stdout } = await execAsync(`ffprobe -v quiet -show_entries format=duration -of csv=p=0 ${audioPath}`);
     const audioDuration = parseFloat(stdout.trim());
     console.log(`[save-section] audio duration: ${audioDuration}s`);
 
-    await new Promise((resolve, reject) => {
-      ffmpeg()
-        .input(videoPath)
-        .inputOptions(['-stream_loop -1'])
-        .input(audioPath)
-        .outputOptions([
-          `-t ${audioDuration}`,
-          '-map 0:v:0',
-          '-map 1:a:0',
-          '-c:v libx264',
-          '-crf 28',
-          '-preset ultrafast',
-          '-c:a aac',
-          '-strict experimental'
-        ])
-        .save(outputPath)
-        .on('start', cmd => console.log(`[save-section] FFmpeg cmd: ${cmd}`))
-        .on('end', () => {
-          console.log(`[save-section] done, size=${fs.statSync(outputPath).size}`);
-          resolve();
-        })
-        .on('error', reject);
-    });
+    // 3. تحميل الـ background
+    const bgRes = await fetch(background.url);
+    const bgBuffer = Buffer.from(await bgRes.arrayBuffer());
 
-    res.json({ success: true, order: order });
+    if (background.type === 'video') {
+      // background فيديو — يتكرر حتى ينتهي الصوت
+      fs.writeFileSync(videoPath, bgBuffer);
+      await new Promise((resolve, reject) => {
+        ffmpeg()
+          .input(videoPath)
+          .inputOptions(['-stream_loop -1'])
+          .input(audioPath)
+          .outputOptions([
+            `-t ${audioDuration}`,
+            '-map 0:v:0',
+            '-map 1:a:0',
+            '-c:v libx264',
+            '-crf 28',
+            '-preset ultrafast',
+            '-c:a aac',
+            '-strict experimental'
+          ])
+          .save(outputPath)
+          .on('end', resolve)
+          .on('error', reject);
+      });
+
+    } else {
+      // background صورة — تبقى ثابتة طول مدة الصوت
+      fs.writeFileSync(imagePath, bgBuffer);
+      await new Promise((resolve, reject) => {
+        ffmpeg()
+          .input(imagePath)
+          .inputOptions(['-loop 1'])
+          .input(audioPath)
+          .outputOptions([
+            `-t ${audioDuration}`,
+            '-map 0:v:0',
+            '-map 1:a:0',
+            '-c:v libx264',
+            '-crf 28',
+            '-preset ultrafast',
+            '-pix_fmt yuv420p',
+            '-c:a aac',
+            '-strict experimental'
+          ])
+          .save(outputPath)
+          .on('end', resolve)
+          .on('error', reject);
+      });
+    }
+
+    console.log(`[save-section] done, size=${fs.statSync(outputPath).size}`);
+    res.json({ success: true, order });
 
   } catch (err) {
     console.log(`[save-section] error: ${err.message}`);
