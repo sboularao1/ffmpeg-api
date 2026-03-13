@@ -69,6 +69,7 @@ app.post('/save-section', async (req, res) => {
     const { stdout } = await execAsync(`ffprobe -v quiet -show_entries format=duration -of csv=p=0 ${audioPath}`);
     const audioDuration = parseFloat(stdout.trim());
     console.log(`[save-section] audio duration: ${audioDuration}s`);
+    console.log(`[save-section] text length: ${safeText.length} chars`);
     
 // 3. تحميل الـ background
 const bgResponse = await new Promise((resolve, reject) => {
