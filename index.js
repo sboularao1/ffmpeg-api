@@ -82,8 +82,9 @@ const bgBuffer = await new Promise((resolve, reject) => {
         return downloadFile(response.headers.location, redirectCount + 1);
       }
       if (response.statusCode !== 200) {
-        return reject(new Error(`HTTP ${response.statusCode}`));
-      }
+  console.log(`[save-section] download failed: ${response.statusCode} for URL: ${url}`);
+  return reject(new Error(`HTTP ${response.statusCode} for ${url}`));
+}
       const chunks = [];
       response.on('data', chunk => chunks.push(chunk));
       response.on('end', () => resolve(Buffer.concat(chunks)));
