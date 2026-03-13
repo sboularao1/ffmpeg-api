@@ -71,17 +71,27 @@ app.post('/save-section', async (req, res) => {
     console.log(`[save-section] audio duration: ${audioDuration}s`);
     console.log(`[save-section] text length: ${safeText.length} chars`);
     
-// 3. تحميل الـ background
-const bgResponse = await new Promise((resolve, reject) => {
-  const protocol = background.url.startsWith('https') ? require('https') : require('http');
-  protocol.get(background.url, (res) => {
-    const chunks = [];
-    res.on('data', chunk => chunks.push(chunk));
-    res.on('end', () => resolve(Buffer.concat(chunks)));
-    res.on('error', reject);
-  });
+// 3. تحميل الـ background مع دعم redirects
+const bgBuffer = await new Promise((resolve, reject) => {
+  const downloadFile = (url, redirectCount = 0) => {
+    if (redirectCount > 5) return reject(new Error('Too many redirects'));
+    const protocol = url.startsWith('https') ? require('https') : require('http');
+    protocol.get(url, (response) => {
+      // تتبع الـ redirect تلقائياً
+      if (response.statusCode === 301 || response.statusCode === 302 || response.statusCode === 303) {
+        return downloadFile(response.headers.location, redirectCount + 1);
+      }
+      if (response.statusCode !== 200) {
+        return reject(new Error(`HTTP ${response.statusCode}`));
+      }
+      const chunks = [];
+      response.on('data', chunk => chunks.push(chunk));
+      response.on('end', () => resolve(Buffer.concat(chunks)));
+      response.on('error', reject);
+    }).on('error', reject);
+  };
+  downloadFile(background.url);
 });
-const bgBuffer = bgResponse;
 
     if (background.type === 'video') {
       // background فيديو — يتكرر حتى ينتهي الصوت
