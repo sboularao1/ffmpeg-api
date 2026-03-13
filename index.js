@@ -95,8 +95,9 @@ const bgBuffer = bgResponse;
             '-map 0:v:0',
             '-map 1:a:0',
             '-c:v libx264',
-            '-crf 28',
+            '-crf 35',
             '-preset ultrafast',
+            '-vf scale=640:360',
             '-c:a aac',
             '-strict experimental'
           ])
@@ -118,8 +119,9 @@ const bgBuffer = bgResponse;
             '-map 0:v:0',
             '-map 1:a:0',
             '-c:v libx264',
-            '-crf 28',
+            '-crf 35',
             '-preset ultrafast',
+            '-vf scale=640:360',
             '-pix_fmt yuv420p',
             '-c:a aac',
             '-strict experimental'
@@ -162,7 +164,7 @@ app.post('/concat-saved', async (req, res) => {
     fs.writeFileSync(concatPath, concatContent);
     console.log(`[concat-saved] concat.txt:\n${concatContent}`);
 
-    await execAsync(`ffmpeg -y -f concat -safe 0 -i ${concatPath} -c:v libx264 -crf 28 -preset ultrafast -c:a aac ${outputPath}`);
+     await execAsync(`ffmpeg -y -f concat -safe 0 -i ${concatPath} -c:v libx264 -crf 35 -preset ultrafast -vf scale=640:360 -c:a aac ${outputPath}`);
     const finalSize = fs.statSync(outputPath).size;
     console.log(`[concat-saved] final video ready, size=${finalSize}`);
 
