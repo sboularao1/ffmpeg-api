@@ -144,13 +144,23 @@ app.post('/concat-saved', async (req, res) => {
     const finalSize = fs.statSync(outputPath).size;
     console.log(`[concat-saved] final video ready, size=${finalSize}`);
 
-    const finalVideo = fs.readFileSync(outputPath);
-    res.setHeader('Content-Type', 'video/mp4');
-    res.send(finalVideo);
+ res.json({ success: true, size: finalSize, download: '/download-final' });
 
   } catch (err) {
     console.log(`[concat-saved] error: ${err.message}`);
     res.status(500).json({ error: err.message });
+  }
+});
+// ✅ تحميل الفيديو النهائي
+app.get('/download-final', (req, res) => {
+  const outputPath = '/tmp/final.mp4';
+  if (fs.existsSync(outputPath)) {
+    const video = fs.readFileSync(outputPath);
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Content-Disposition', 'attachment; filename="final.mp4"');
+    res.send(video);
+  } else {
+    res.status(404).json({ error: 'Final video not found' });
   }
 });
 
