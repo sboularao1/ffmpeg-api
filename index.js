@@ -73,6 +73,10 @@ app.post('/save-section', async (req, res) => {
     
 // 3. تحميل الـ background مع دعم redirects
 const bgBuffer = await new Promise((resolve, reject) => {
+  // إذا كان الرابط من Pollinations أو Unsplash نعامله كصورة دائماً
+if (background.url.includes('pollinations.ai') || background.url.includes('unsplash.com')) {
+  background.type = 'image';
+}
   const downloadFile = (url, redirectCount = 0) => {
     if (redirectCount > 5) return reject(new Error('Too many redirects'));
     const protocol = url.startsWith('https') ? require('https') : require('http');
