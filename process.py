@@ -4,8 +4,8 @@
 
 import sys
 import json
-from moviepy.editor import *
-from moviepy.video.fx import fadein, fadeout
+from moviepy import *
+import moviepy.video.fx as vfx
 
 def process_section(input_path, output_path, media_type, duration, on_screen_text):
     """
