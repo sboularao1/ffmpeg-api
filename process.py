@@ -29,7 +29,9 @@ def process_section(input_path, output_path, media_type, duration, on_screen_tex
         clip = VideoFileClip(input_path)
         if clip.duration < duration:
             # تكرار الفيديو إذا كان أقصر من الصوت
-            clip = clip.loop(duration=duration)
+            from moviepy import concatenate_videoclips
+loops = int(duration / clip.duration) + 1
+clip = concatenate_videoclips([clip] * loops).subclipped(0, duration)
         else:
             clip = clip.subclip(0, duration)
     
