@@ -42,7 +42,18 @@ app.get('/get-section/:order', (req, res) => {
 
 // ✅ حفظ section واحد — الطبقة 1: background + TTS audio
 app.post('/save-section', async (req, res) => {
-  const { order, text, language, background, on_screen_text } = req.body;
+  const { 
+  order, 
+  text, 
+  language, 
+  background, 
+  on_screen_text,
+  overlay_image,
+  diagram,
+  sfx,
+  music
+} = req.body;
+  
   console.log(`[save-section] order=${order} language=${language}`);
 
   const videoPath = `/tmp/bg_${order}.mp4`;
