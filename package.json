@@ -8,6 +8,6 @@
     "fluent-ffmpeg": "^2.1.2"
   },
   "scripts": {
-    "start": "node index.js"
-  }
+  "start": "pip install moviepy Pillow numpy --break-system-packages && node index.js"
+}
 }
