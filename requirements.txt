@@ -1,1 +1,4 @@
 edge-tts
+moviepy
+Pillow
+numpy
