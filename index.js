@@ -1,11 +1,3 @@
-// تثبيت MoviePy عند بدء السيرفر
-const { execSync } = require('child_process');
-try {
-  execSync('pip install moviepy Pillow numpy --break-system-packages --quiet', { stdio: 'inherit' });
-  console.log('[startup] MoviePy installed successfully');
-} catch (err) {
-  console.log('[startup] MoviePy install failed:', err.message);
-}
 const express = require('express');
 const fetch = require('node-fetch');
 const ffmpeg = require('fluent-ffmpeg');
