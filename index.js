@@ -114,10 +114,10 @@ if (background.url.includes('pollinations.ai') || background.url.includes('unspl
       const processedPath = `/tmp/processed_${order}.mp4`;
       fs.writeFileSync(videoPath, bgBuffer);
       // تطبيق Ken Burns + Fade + Color Grading بـ MoviePy
-      await execAsync(`python3 process.py ${videoPath} ${processedPath} ${background.type} ${audioDuration} "${on_screen_text || ''}"`);
+     // await execAsync(`python3 process.py ${videoPath} ${processedPath} ${background.type} ${audioDuration} "${on_screen_text || ''}"`);
       await new Promise((resolve, reject) => {
         ffmpeg()
-          .input(processedPath)
+          .input(videoPath)
           .inputOptions([])
           .input(audioPath)
           .outputOptions([
@@ -142,10 +142,10 @@ if (background.url.includes('pollinations.ai') || background.url.includes('unspl
       const processedPath = `/tmp/processed_${order}.mp4`; 
       fs.writeFileSync(imagePath, bgBuffer);
       // تطبيق Ken Burns + Fade + Color Grading بـ MoviePy
-      await execAsync(`python3 process.py ${imagePath} ${processedPath} ${background.type} ${audioDuration} "${on_screen_text || ''}"`);
+     // await execAsync(`python3 process.py ${imagePath} ${processedPath} ${background.type} ${audioDuration} "${on_screen_text || ''}"`);
       await new Promise((resolve, reject) => {
         ffmpeg()
-          .input(processedPath)
+          .input(imagePath)
           .input(audioPath)
           .outputOptions([
             `-t ${audioDuration}`,
