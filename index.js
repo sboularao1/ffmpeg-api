@@ -100,11 +100,14 @@ if (background.url.includes('pollinations.ai') || background.url.includes('unspl
 
     if (background.type === 'video') {
       // background فيديو — يتكرر حتى ينتهي الصوت
+      const processedPath = `/tmp/processed_${order}.mp4`;
       fs.writeFileSync(videoPath, bgBuffer);
+      // تطبيق Ken Burns + Fade + Color Grading بـ MoviePy
+      await execAsync(`python3 process.py ${videoPath} ${processedPath} ${background.type} ${audioDuration} "${on_screen_text || ''}"`);
       await new Promise((resolve, reject) => {
         ffmpeg()
-          .input(videoPath)
-          .inputOptions(['-stream_loop -1'])
+          .input(processedPath)
+          .inputOptions([])
           .input(audioPath)
           .outputOptions([
             `-t ${audioDuration}`,
@@ -125,11 +128,13 @@ if (background.url.includes('pollinations.ai') || background.url.includes('unspl
 
     } else {
       // background صورة — تبقى ثابتة طول مدة الصوت
+      const processedPath = `/tmp/processed_${order}.mp4`; 
       fs.writeFileSync(imagePath, bgBuffer);
+      // تطبيق Ken Burns + Fade + Color Grading بـ MoviePy
+      await execAsync(`python3 process.py ${imagePath} ${processedPath} ${background.type} ${audioDuration} "${on_screen_text || ''}"`);
       await new Promise((resolve, reject) => {
         ffmpeg()
-          .input(imagePath)
-          .inputOptions(['-loop 1'])
+          .input(processedPath)
           .input(audioPath)
           .outputOptions([
             `-t ${audioDuration}`,
