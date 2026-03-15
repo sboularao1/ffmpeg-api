@@ -143,16 +143,16 @@ if (background.url.includes('pollinations.ai') || background.url.includes('unspl
       const processedPath = `/tmp/processed_${order}.mp4`;
       fs.writeFileSync(videoPath, bgBuffer);
       // تطبيق Ken Burns + Fade + Color Grading بـ MoviePy
-      try {
-        await execAsync(`python3 process.py ${videoPath} ${processedPath} video ${audioDuration} "${on_screen_text || ''}"`);
-        console.log(`[save-section] MoviePy ✅ order=${order}`);
-      } catch (e) {
-        console.log(`[save-section] MoviePy failed, using FFmpeg ⚠️ ${e.message}`);
-        fs.copyFileSync(videoPath, processedPath);
-      }
+      //try {
+        //await execAsync(`python3 process.py ${videoPath} ${processedPath} video ${audioDuration} "${on_screen_text || ''}"`);
+        //console.log(`[save-section] MoviePy ✅ order=${order}`);
+      //} catch (e) {
+       // console.log(`[save-section] MoviePy failed, using FFmpeg ⚠️ ${e.message}`);
+       // fs.copyFileSync(videoPath, processedPath);
+     // }
       await new Promise((resolve, reject) => {
         ffmpeg()
-          .input(processedPath)
+          .input(videoPath)
           .inputOptions([])
           .input(audioPath)
           .outputOptions([
@@ -177,15 +177,15 @@ if (background.url.includes('pollinations.ai') || background.url.includes('unspl
       const processedPath = `/tmp/processed_${order}.mp4`; 
       fs.writeFileSync(imagePath, bgBuffer);
       // تطبيق Ken Burns + Fade + Color Grading بـ MoviePy
-      try {
-        await execAsync(`python3 process.py ${imagePath} ${processedPath} image ${audioDuration} "${on_screen_text || ''}"`);
-        console.log(`[save-section] MoviePy ✅ order=${order}`);
-      } catch (e) {
-        console.log(`[save-section] MoviePy failed, using FFmpeg ⚠️ ${e.message}`);
-      }
+     // try {
+       // await execAsync(`python3 process.py ${imagePath} ${processedPath} image ${audioDuration} "${on_screen_text || ''}"`);
+       // console.log(`[save-section] MoviePy ✅ order=${order}`);
+    //  } catch (e) {
+     //   console.log(`[save-section] MoviePy failed, using FFmpeg ⚠️ ${e.message}`);
+    //  }
       await new Promise((resolve, reject) => {
         ffmpeg()
-          .input(fs.existsSync(processedPath) ? processedPath : imagePath)
+          .input(imagePath)
           .input(audioPath)
           .outputOptions([
             `-t ${audioDuration}`,
