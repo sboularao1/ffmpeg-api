@@ -191,11 +191,12 @@ app.post('/save-section', async (req, res) => {
 
         if (musicBuffer) {
           cmd.input(musicPath)
-            .outputOptions([
-              `-t ${audioDuration}`,
-              '-filter_complex', '[1:a][2:a]amix=inputs=2:duration=first:weights=1 0.15[aout]',
-              '-map 0:v:0',
-              '-map [aout]',
+  .inputOptions(['-stream_loop -1'])
+  .outputOptions([
+    `-t ${audioDuration}`,
+    '-filter_complex', `[1:a]volume=1[tts];[2:a]volume=0.15[music];[tts][music]amix=inputs=2:duration=first[aout]`,
+    '-map 0:v:0',
+    '-map [aout]',
               '-c:v libx264',
               '-crf 35',
               '-preset ultrafast',
@@ -244,11 +245,12 @@ app.post('/save-section', async (req, res) => {
 
         if (musicBuffer) {
           cmd.input(musicPath)
-            .outputOptions([
-              `-t ${audioDuration}`,
-              '-filter_complex', '[1:a][2:a]amix=inputs=2:duration=first:weights=1 0.15[aout]',
-              '-map 0:v:0',
-              '-map [aout]',
+  .inputOptions(['-stream_loop -1'])
+  .outputOptions([
+    `-t ${audioDuration}`,
+    '-filter_complex', `[1:a]volume=1[tts];[2:a]volume=0.15[music];[tts][music]amix=inputs=2:duration=first[aout]`,
+    '-map 0:v:0',
+    '-map [aout]',
               '-c:v libx264',
               '-crf 35',
               '-preset ultrafast',
