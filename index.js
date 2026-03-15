@@ -51,7 +51,9 @@ app.post('/save-section', async (req, res) => {
   overlay_image,
   diagram,
   sfx,
-  music
+  music,
+  voice: requestedVoice,
+  tts_engine
 } = req.body;
   
   console.log(`[save-section] order=${order} language=${language}`);
@@ -62,11 +64,12 @@ app.post('/save-section', async (req, res) => {
   const outputPath = `/tmp/section_${order}.mp4`;
 
   const voiceMap = {
-    'arabic': 'ar-EG-SalmaNeural',
-    'french': 'fr-FR-DeniseNeural',
-    'english': 'en-US-JennyNeural'
-  };
-  const voice = voiceMap[language?.toLowerCase()] || 'en-US-JennyNeural';
+  'arabic': 'ar-EG-SalmaNeural',
+  'french': 'fr-FR-DeniseNeural',
+  'english': 'en-US-JennyNeural'
+};
+const voice = requestedVoice || voiceMap[language?.toLowerCase()] || 'en-US-JennyNeural';
+const engine = (language?.toLowerCase() === 'arabic') ? 'edge' : (tts_engine || 'edge');
   
   try {
     // 1. تنظيف النص
@@ -76,7 +79,33 @@ app.post('/save-section', async (req, res) => {
       .trim();
 
     // 2. توليد الصوت
-    await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
+    const generateTTS = async () => {
+  if (engine === 'kokoro' && process.env.KOKORO_API_URL) {
+    try {
+      const kokoroRes = await fetch(`${process.env.KOKORO_API_URL}/tts`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: safeText, voice }),
+        signal: AbortSignal.timeout(15000)
+      });
+      if (kokoroRes.ok) {
+        const wavPath = audioPath.replace('.mp3', '.wav');
+        fs.writeFileSync(wavPath, Buffer.from(await kokoroRes.arrayBuffer()));
+        await execAsync(`ffmpeg -y -i ${wavPath} ${audioPath}`);
+        console.log(`[TTS] Kokoro ✅ voice=${voice}`);
+        return;
+      }
+    } catch (e) {
+      console.log(`[TTS] Kokoro failed → Edge-TTS fallback: ${e.message}`);
+    }
+  }
+  // Edge-TTS (default + fallback)
+  await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
+  console.log(`[TTS] Edge-TTS ✅ voice=${voice}`);
+};
+
+await generateTTS();
+    
     const { stdout } = await execAsync(`ffprobe -v quiet -show_entries format=duration -of csv=p=0 ${audioPath}`);
     const audioDuration = parseFloat(stdout.trim());
     console.log(`[save-section] audio duration: ${audioDuration}s`);
