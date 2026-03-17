@@ -29,9 +29,7 @@ app.post('/scrape', async (req, res) => {
 
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
 
-    // استخراج النص الخام من الصفحة
     const content = await page.evaluate(() => {
-      // حذف العناصر غير المفيدة
       const remove = ['script', 'style', 'nav', 'footer', 'header', 'aside', 'iframe'];
       remove.forEach(tag => {
         document.querySelectorAll(tag).forEach(el => el.remove());
@@ -39,12 +37,11 @@ app.post('/scrape', async (req, res) => {
       return document.body?.innerText || document.body?.textContent || '';
     });
 
-    // تنظيف النص
     const clean = content
       .replace(/\s+/g, ' ')
       .replace(/\n{3,}/g, '\n\n')
       .trim()
-      .slice(0, 8000); // Groq يقبل حتى ~8000 كلمة
+      .slice(0, 8000);
 
     console.log(`[scrape] done, length=${clean.length}`);
     res.json({ content: clean, source: url });
@@ -57,6 +54,7 @@ app.post('/scrape', async (req, res) => {
   }
 });
 // ===== END: Lightpanda scraper endpoint =====
+
 // ✅ Health check — لـ UptimeRobot
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
@@ -122,13 +120,11 @@ app.post('/save-section', async (req, res) => {
   const engine = (language?.toLowerCase() === 'arabic') ? 'edge' : (tts_engine || 'edge');
 
   try {
-    // 1. تنظيف النص
     const safeText = text
       .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\w\s.,!?'-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
-    // 2. توليد الصوت — Kokoro أو Edge-TTS
     const generateTTS = async () => {
       if (engine === 'kokoro' && process.env.KOKORO_API_URL) {
         try {
@@ -149,7 +145,6 @@ app.post('/save-section', async (req, res) => {
           console.log(`[TTS] Kokoro failed → Edge-TTS fallback: ${e.message}`);
         }
       }
-      // Edge-TTS (default + fallback)
       await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
       console.log(`[TTS] Edge-TTS ✅ voice=${voice}`);
     };
@@ -161,7 +156,6 @@ app.post('/save-section', async (req, res) => {
     console.log(`[save-section] audio duration: ${audioDuration}s`);
     console.log(`[save-section] text length: ${safeText.length} chars`);
 
-    // 2.5 تحميل الموسيقى إذا وجدت
     let musicBuffer = null;
     if (music_url) {
       try {
@@ -190,9 +184,7 @@ app.post('/save-section', async (req, res) => {
       }
     }
 
-    // 3. تحميل الـ background مع دعم redirects
     const bgBuffer = await new Promise((resolve, reject) => {
-      // إذا كان الرابط من Unsplash نعامله كصورة دائماً
       if (background.url.includes('unsplash.com')) {
         background.type = 'image';
       }
@@ -200,7 +192,6 @@ app.post('/save-section', async (req, res) => {
         if (redirectCount > 5) return reject(new Error('Too many redirects'));
         const protocol = url.startsWith('https') ? require('https') : require('http');
         protocol.get(url, (response) => {
-          // تتبع الـ redirect تلقائياً
           if (response.statusCode === 301 || response.statusCode === 302 || response.statusCode === 303) {
             return downloadFile(response.headers.location, redirectCount + 1);
           }
@@ -218,33 +209,21 @@ app.post('/save-section', async (req, res) => {
     });
 
     if (background.type === 'video') {
-      // background فيديو — يتكرر حتى ينتهي الصوت
       fs.writeFileSync(videoPath, bgBuffer);
-
-      // تطبيق Ken Burns + Fade + Color Grading بـ MoviePy
-      // ⚠️ معلّق — MoviePy بطيء على Render free tier
-      // try {
-      //   await execAsync(`python3 process.py ${videoPath} ${processedPath} video ${audioDuration} ""`);
-      //   console.log(`[save-section] MoviePy ✅ order=${order}`);
-      // } catch (e) {
-      //   console.log(`[save-section] MoviePy failed, using FFmpeg ⚠️ ${e.message}`);
-      //   fs.copyFileSync(videoPath, processedPath);
-      // }
 
       await new Promise((resolve, reject) => {
         const cmd = ffmpeg()
           .input(videoPath)
-          .inputOptions([])
           .input(audioPath);
 
         if (musicBuffer) {
           cmd.input(musicPath)
-  .inputOptions(['-stream_loop -1'])
-  .outputOptions([
-    `-t ${audioDuration}`,
-    '-filter_complex', `[1:a]volume=1[tts];[2:a]volume=0.15[music];[tts][music]amix=inputs=2:duration=first[aout]`,
-    '-map 0:v:0',
-    '-map [aout]',
+            .inputOptions(['-stream_loop -1'])
+            .outputOptions([
+              `-t ${audioDuration}`,
+              '-filter_complex', `[1:a]volume=1[tts];[2:a]volume=0.15[music];[tts][music]amix=inputs=2:duration=first[aout]`,
+              '-map 0:v:0',
+              '-map [aout]',
               '-c:v libx264',
               '-crf 35',
               '-preset ultrafast',
@@ -274,17 +253,7 @@ app.post('/save-section', async (req, res) => {
       });
 
     } else {
-      // background صورة — تبقى ثابتة طول مدة الصوت
       fs.writeFileSync(imagePath, bgBuffer);
-
-      // تطبيق Ken Burns + Fade + Color Grading بـ MoviePy
-      // ⚠️ معلّق — MoviePy بطيء على Render free tier
-      // try {
-      //   await execAsync(`python3 process.py ${imagePath} ${processedPath} image ${audioDuration} ""`);
-      //   console.log(`[save-section] MoviePy ✅ order=${order}`);
-      // } catch (e) {
-      //   console.log(`[save-section] MoviePy failed, using FFmpeg ⚠️ ${e.message}`);
-      // }
 
       await new Promise((resolve, reject) => {
         const cmd = ffmpeg()
@@ -293,12 +262,12 @@ app.post('/save-section', async (req, res) => {
 
         if (musicBuffer) {
           cmd.input(musicPath)
-  .inputOptions(['-stream_loop -1'])
-  .outputOptions([
-    `-t ${audioDuration}`,
-    '-filter_complex', `[1:a]volume=1[tts];[2:a]volume=0.15[music];[tts][music]amix=inputs=2:duration=first[aout]`,
-    '-map 0:v:0',
-    '-map [aout]',
+            .inputOptions(['-stream_loop -1'])
+            .outputOptions([
+              `-t ${audioDuration}`,
+              '-filter_complex', `[1:a]volume=1[tts];[2:a]volume=0.15[music];[tts][music]amix=inputs=2:duration=first[aout]`,
+              '-map 0:v:0',
+              '-map [aout]',
               '-c:v libx264',
               '-crf 35',
               '-preset ultrafast',
@@ -348,7 +317,6 @@ app.post('/concat-saved', async (req, res) => {
     const concatPath = '/tmp/concat.txt';
     const outputPath = '/tmp/final.mp4';
 
-    // التحقق من وجود كل الملفات
     for (const o of orders) {
       const p = `/tmp/section_${o}.mp4`;
       if (!fs.existsSync(p)) {
