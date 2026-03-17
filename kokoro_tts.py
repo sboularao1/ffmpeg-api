@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # ===== kokoro_tts.py =====
 import sys
+print(f"[kokoro_tts] Python: {sys.executable}", flush=True)
+print(f"[kokoro_tts] Path: {sys.path}", flush=True)
 import soundfile as sf
 from kokoro import KPipeline
 
