@@ -9,7 +9,6 @@ subprocess.check_call([sys.executable, '-m', 'pip', 'install',
                        '--break-system-packages', '-q'])
 
 import arabic_reshaper
-from bidi.algorithm import get_display
 
 def format_time(seconds):
     h = int(seconds // 3600)
@@ -56,8 +55,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
         sentence_end = min(current_time + sentence_duration + 0.3, audio_duration - 0.1)
 
         # reshape العربية للعرض الصحيح
-        reshaped = arabic_reshaper.reshape(sentence)
-        display_text = get_display(reshaped)
+        display_text = arabic_reshaper.reshape(sentence)
         # تنظيف للـ ASS
         display_text = display_text.replace('\n', ' ').replace('{', '').replace('}', '')
 
