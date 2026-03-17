@@ -2,7 +2,12 @@
 # generate_ass_arabic.py
 # الاستخدام: python3 generate_ass_arabic.py "النص" مدة_الصوت مسار_الخط مسار_الخروج
 
-import sys
+#!/usr/bin/env python3
+import subprocess, sys
+subprocess.check_call([sys.executable, '-m', 'pip', 'install', 
+                       'arabic-reshaper', 'python-bidi', 
+                       '--break-system-packages', '-q'])
+
 import arabic_reshaper
 from bidi.algorithm import get_display
 
