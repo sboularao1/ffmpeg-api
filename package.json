@@ -9,6 +9,7 @@
     "@lightpanda/browser": "^1.2.0"
   },
   "scripts": {
+    "postinstall": "node node_modules/@lightpanda/browser/install.js || true",
     "start": "pip install moviepy Pillow numpy --break-system-packages && node index.js"
   }
 }
