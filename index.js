@@ -15,15 +15,16 @@ app.use(express.json({ limit: '50mb' }));
 // ================================================================
 
 const FONTS_DIR = '/tmp/fonts';
-// ===== START: FONTS — إصلاح Cairo + إضافة Montserrat + Poppins =====
+
+// ===== START: FONTS URLs المُصحَّحة نهائياً =====
 const FONTS = {
-  cairo:       { file: 'Cairo-Black.ttf',       url: 'https://github.com/Gue3bara/Cairo/raw/master/fonts/ttf/Cairo-Black.ttf' },
-  tajawal:     { file: 'Tajawal-Regular.ttf',    url: 'https://github.com/google/fonts/raw/main/ofl/tajawal/Tajawal-Regular.ttf' },
-  almarai:     { file: 'Almarai-Bold.ttf',       url: 'https://github.com/google/fonts/raw/main/ofl/almarai/Almarai-Bold.ttf' },
-  montserrat:  { file: 'Montserrat-Bold.ttf',    url: 'https://github.com/google/fonts/raw/main/ofl/montserrat/static/Montserrat-Bold.ttf' },
-  poppins:     { file: 'Poppins-SemiBold.ttf',   url: 'https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-SemiBold.ttf' }
+  cairo:      { file: 'Cairo-Black.ttf',      url: 'https://github.com/google/fonts/raw/main/ofl/cairo/static/Cairo-Black.ttf' },
+  tajawal:    { file: 'Tajawal-Regular.ttf',   url: 'https://github.com/google/fonts/raw/main/ofl/tajawal/Tajawal-Regular.ttf' },
+  almarai:    { file: 'Almarai-Bold.ttf',      url: 'https://github.com/google/fonts/raw/main/ofl/almarai/Almarai-Bold.ttf' },
+  montserrat: { file: 'Montserrat-Bold.ttf',   url: 'https://github.com/JulietaUla/Montserrat/raw/master/fonts/ttf/Montserrat-Bold.ttf' },
+  poppins:    { file: 'Poppins-SemiBold.ttf',  url: 'https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-SemiBold.ttf' }
 };
-// ===== END: FONTS — إصلاح Cairo + إضافة Montserrat + Poppins =====
+// ===== END: FONTS URLs المُصحَّحة نهائياً =====
 
 const ensureFonts = async () => {
   if (!fs.existsSync(FONTS_DIR)) fs.mkdirSync(FONTS_DIR, { recursive: true });
