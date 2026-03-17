@@ -10,6 +10,6 @@
   },
   "scripts": {
     "postinstall": "node node_modules/@lightpanda/browser/install.js || true",
-    "start": "pip install --upgrade edge-tts moviepy Pillow numpy kokoro soundfile --break-system-packages && node index.js"
+    "start": "pip install --no-cache-dir edge-tts moviepy Pillow numpy --break-system-packages && node index.js"
   }
 }
