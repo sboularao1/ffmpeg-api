@@ -104,34 +104,53 @@ app.post('/save-section', async (req, res) => {
   };
   const voice = requestedVoice || voiceMap[language?.toLowerCase()] || 'en-US-JennyNeural';
   const engine = (language?.toLowerCase() === 'arabic') ? 'edge' : (tts_engine || 'kokoro');
-  
+
   try {
     const safeText = text
       .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\w\s.,!?'-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
 
+    // ===== START: generateTTS with Kokoro via Hugging Face =====
     const generateTTS = async () => {
-      if (engine === 'kokoro') {
+      if (engine === 'kokoro' && process.env.KOKORO_API_URL) {
         try {
-          // تحديد lang_code من اسم الصوت
           const langCode = voice.startsWith('fr') ? 'fr-fr' : 'en-us';
-          const wavPath = audioPath.replace('.mp3', '.wav');
-          await execAsync(
-            `python3 kokoro_tts.py "${safeText.replace(/"/g, '\\"')}" "${voice}" "${wavPath}" "${langCode}"`,
-            { timeout: 30000 }
+          console.log(`[TTS] Kokoro → HF Space voice=${voice} lang=${langCode}`);
+
+          const params = new URLSearchParams({
+            text: safeText,
+            voice: voice,
+            lang: langCode
+          });
+
+          const kokoroRes = await fetch(
+            `${process.env.KOKORO_API_URL}/tts?${params.toString()}`,
+            {
+              method: 'POST',
+              signal: AbortSignal.timeout(30000)
+            }
           );
-          await execAsync(`ffmpeg -y -i ${wavPath} ${audioPath}`);
-          console.log(`[TTS] Kokoro ✅ voice=${voice}`);
-          return;
+
+          if (kokoroRes.ok) {
+            const wavPath = audioPath.replace('.mp3', '.wav');
+            const audioBuffer = Buffer.from(await kokoroRes.arrayBuffer());
+            fs.writeFileSync(wavPath, audioBuffer);
+            await execAsync(`ffmpeg -y -i ${wavPath} ${audioPath}`);
+            console.log(`[TTS] Kokoro ✅ voice=${voice}`);
+            return;
+          } else {
+            const errText = await kokoroRes.text();
+            console.log(`[TTS] Kokoro HTTP ${kokoroRes.status}: ${errText}`);
+          }
         } catch (e) {
           console.log(`[TTS] Kokoro failed → Edge-TTS fallback: ${e.message}`);
-          console.log(`[TTS] Kokoro stderr: ${e.stderr || 'none'}`);
         }
       }
       await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
       console.log(`[TTS] Edge-TTS ✅ voice=${voice}`);
     };
+    // ===== END: generateTTS with Kokoro via Hugging Face =====
 
     await generateTTS();
 
