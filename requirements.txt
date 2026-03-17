@@ -2,5 +2,3 @@ edge-tts
 moviepy
 Pillow
 numpy
-kokoro
-soundfile
