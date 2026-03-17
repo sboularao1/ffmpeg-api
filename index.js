@@ -15,11 +15,22 @@ app.use(express.json({ limit: '50mb' }));
 // ================================================================
 
 const FONTS_DIR = '/tmp/fonts';
+// ===== START: FONTS URLs المُصحَّحة =====
 const FONTS = {
-  cairo:   { file: 'Cairo-Black.ttf',    url: 'https://github.com/google/fonts/raw/main/ofl/cairo/Cairo%5Bslnt%2Cwght%5D.ttf' },
-  tajawal: { file: 'Tajawal-Regular.ttf', url: 'https://github.com/google/fonts/raw/main/ofl/tajawal/Tajawal-Regular.ttf' },
-  almarai: { file: 'Almarai-Bold.ttf',   url: 'https://github.com/google/fonts/raw/main/ofl/almarai/Almarai-Bold.ttf' }
+  cairo:   {
+    file: 'Cairo-Black.ttf',
+    url: 'https://github.com/google/fonts/raw/main/ofl/cairo/static/Cairo-Black.ttf'
+  },
+  tajawal: {
+    file: 'Tajawal-Regular.ttf',
+    url: 'https://github.com/google/fonts/raw/main/ofl/tajawal/Tajawal-Regular.ttf'
+  },
+  almarai: {
+    file: 'Almarai-Bold.ttf',
+    url: 'https://github.com/google/fonts/raw/main/ofl/almarai/Almarai-Bold.ttf'
+  }
 };
+// ===== END: FONTS URLs المُصحَّحة =====
 
 const ensureFonts = async () => {
   if (!fs.existsSync(FONTS_DIR)) fs.mkdirSync(FONTS_DIR, { recursive: true });
