@@ -5,9 +5,10 @@
   "dependencies": {
     "express": "^4.18.2",
     "node-fetch": "^2.6.9",
-    "fluent-ffmpeg": "^2.1.2"
+    "fluent-ffmpeg": "^2.1.2",
+    "@lightpanda/browser": "^1.2.0"
   },
   "scripts": {
-  "start": "pip install moviepy Pillow numpy --break-system-packages && node index.js"
-}
+    "start": "pip install moviepy Pillow numpy --break-system-packages && node index.js"
+  }
 }
