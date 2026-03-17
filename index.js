@@ -10,36 +10,24 @@ const app = express();
 app.use(express.json({ limit: '50mb' }));
 
 // ===== START: Lightpanda scraper endpoint =====
-const { chromium } = require('@lightpanda/browser');
-
 app.post('/scrape', async (req, res) => {
   const { url } = req.body;
-
-  if (!url) {
-    return res.status(400).json({ error: 'url is required' });
-  }
+  if (!url) return res.status(400).json({ error: 'url is required' });
 
   console.log(`[scrape] fetching: ${url}`);
 
-  let browser;
   try {
-    browser = await chromium.launch();
-    const context = await browser.newContext();
-    const page = await context.newPage();
-
-    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-
-    const content = await page.evaluate(() => {
-      const remove = ['script', 'style', 'nav', 'footer', 'header', 'aside', 'iframe'];
-      remove.forEach(tag => {
-        document.querySelectorAll(tag).forEach(el => el.remove());
-      });
-      return document.body?.innerText || document.body?.textContent || '';
+    const response = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; bot/1.0)' },
+      signal: AbortSignal.timeout(10000)
     });
+    const html = await response.text();
 
-    const clean = content
+    const clean = html
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+      .replace(/<[^>]+>/g, ' ')
       .replace(/\s+/g, ' ')
-      .replace(/\n{3,}/g, '\n\n')
       .trim()
       .slice(0, 8000);
 
@@ -49,8 +37,6 @@ app.post('/scrape', async (req, res) => {
   } catch (err) {
     console.log(`[scrape] error: ${err.message}`);
     res.status(500).json({ error: err.message, source: url });
-  } finally {
-    if (browser) await browser.close();
   }
 });
 // ===== END: Lightpanda scraper endpoint =====
