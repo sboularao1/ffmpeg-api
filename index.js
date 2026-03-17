@@ -59,6 +59,58 @@ const getFont = (nameOrLang) => {
   const key = langMap[nameOrLang] || nameOrLang || 'cairo';
   return path.join(FONTS_DIR, FONTS[key]?.file || FONTS.cairo.file);
 };
+// ===== START: generateASS — إنجليزي/فرنسي =====
+const generateASS = (text, audioDuration, fontFile, language) => {
+  const sentences = text
+    .split(/(?<=[.!?,;])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 2);
+
+  if (!sentences.length) return null;
+
+  const totalWords = text.split(/\s+/).length;
+  const fontName = language === 'french' ? 'Poppins SemiBold' : 'Montserrat Bold';
+  const safeFontFile = fontFile.replace(/\\/g, '/');
+
+  const fmt = (t) => {
+    const h = Math.floor(t / 3600);
+    const m = Math.floor((t % 3600) / 60);
+    const s = Math.floor(t % 60);
+    const cs = Math.floor((t % 1) * 100);
+    return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(cs).padStart(2,'0')}`;
+  };
+
+  let assContent = `[Script Info]
+ScriptType: v4.00+
+PlayResX: 640
+PlayResY: 360
+ScaledBorderAndShadow: yes
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,${fontName},20,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,1,2,20,20,20,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+`;
+
+  let currentTime = 0;
+  for (const sentence of sentences) {
+    const words = sentence.split(/\s+/).length;
+    const duration = (words / totalWords) * audioDuration;
+    const end = Math.min(currentTime + duration + 0.3, audioDuration - 0.1);
+    const cleanText = sentence.replace(/\{/g,'').replace(/\}/g,'').replace(/\n/g,' ');
+    assContent += `Dialogue: 0,${fmt(currentTime)},${fmt(end)},Default,,0,0,0,,${cleanText}\n`;
+    currentTime = end + 0.05;
+  }
+
+  const assPath = `/tmp/subs_${Date.now()}.ass`;
+  fs.writeFileSync(assPath, assContent, 'utf8');
+  return assPath;
+};
+// ===== END: generateASS — إنجليزي/فرنسي =====
+
+
 // ===== END: getFont بناءً على اللغة =====
 
 // ================================================================
@@ -189,9 +241,12 @@ const buildVideoFilters = (effects = {}, mediaType = 'video', audioDuration = 10
   }
 
   // 15. Subtitles من ملف SRT
-  if (effects.subtitles && effects.subtitles_path && fs.existsSync(effects.subtitles_path)) {
-    filters.push(`subtitles='${effects.subtitles_path}'`);
-  }
+  // ===== START: subtitles ASS filter =====
+if (effects.subtitles && effects.subtitles_path && fs.existsSync(effects.subtitles_path)) {
+  const safePath = effects.subtitles_path.replace(/\\/g, '/').replace(/'/g, "\\'").replace(/:/g, "\\:");
+  filters.push(`subtitles='${safePath}'`);
+}
+// ===== END: subtitles ASS filter =====
 
   return filters;
 };
@@ -465,6 +520,26 @@ app.post('/save-section', async (req, res) => {
     const audioDuration = parseFloat(stdout.trim());
     console.log(`[save-section] audio=${audioDuration}s`);
 
+    // ===== START: توليد ASS بعد TTS =====
+let assPath = null;
+try {
+  if (language === 'arabic') {
+    // Python script للعربية
+    const fontFile = getFont('cairo');
+    const tempAssPath = `/tmp/subs_${Date.now()}.ass`;
+    const { execSync } = require('child_process');
+    execSync(`python3 generate_ass_arabic.py "${text.replace(/"/g, '\\"')}" ${audioDuration} "${fontFile}" "${tempAssPath}"`);
+    assPath = tempAssPath;
+  } else {
+    // Node.js للإنجليزية والفرنسية
+    const fontFile = getFont(language);
+    assPath = generateASS(text, audioDuration, fontFile, language);
+  }
+} catch (e) {
+  console.error('[ASS] generation failed:', e.message);
+}
+// ===== END: توليد ASS بعد TTS =====
+
     // تحميل الموسيقى
     let musicBuffer = null;
     if (music_url) {
@@ -495,10 +570,12 @@ app.post('/save-section', async (req, res) => {
       film_grain: requestedEffects?.film_grain ?? false,
       chromatic: requestedEffects?.chromatic ?? false,
       hue_shift: requestedEffects?.hue_shift ?? false,
-      lower_third: !!(on_screen_text),
+      lower_third: false,
       lower_third_text: on_screen_text || '',
       lower_third_font: language === 'arabic' ? 'cairo' : language === 'french' ? 'poppins' : 'montserrat',
       lower_third_fontsize: 28,
+       subtitles: !!assPath,
+       subtitles_path: assPath || '',
       title_card: requestedEffects?.title_card ?? false,
       title_text: requestedEffects?.title_text ?? '',
       title_font: requestedEffects?.title_font ?? 'almarai',
