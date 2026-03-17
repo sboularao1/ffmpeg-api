@@ -112,45 +112,65 @@ app.post('/save-section', async (req, res) => {
       .trim();
 
     // ===== START: generateTTS with Kokoro via Hugging Face =====
-    const generateTTS = async () => {
-      if (engine === 'kokoro' && process.env.KOKORO_API_URL) {
-        try {
-          const langCode = voice.startsWith('fr') ? 'fr-fr' : 'en-us';
-          console.log(`[TTS] Kokoro → HF Space voice=${voice} lang=${langCode}`);
+const generateTTS = async () => {
+  if (engine === 'kokoro' && process.env.KOKORO_API_URL) {
+    try {
+      const langCode = voice.startsWith('fr') ? 'fr-fr' : 'en-us';
 
-          const params = new URLSearchParams({
-            text: safeText,
-            voice: voice,
-            lang: langCode
-          });
+      // تحويل اسم الصوت من Edge-TTS إلى Kokoro
+      const kokoroVoiceMap = {
+        'en-US-AndrewNeural': 'am_adam',
+        'en-US-BrianNeural': 'am_michael',
+        'en-US-GuyNeural': 'am_adam',
+        'en-US-EricNeural': 'am_michael',
+        'en-US-RogerNeural': 'bm_george',
+        'en-US-SteffanNeural': 'bm_george',
+        'en-US-ChristopherNeural': 'am_adam',
+        'en-US-AvaNeural': 'af_heart',
+        'en-US-EmmaNeural': 'af_bella',
+        'en-US-JennyNeural': 'af_heart',
+        'en-US-AriaNeural': 'af_bella',
+        'en-US-MichelleNeural': 'af_heart',
+        'fr-FR-DeniseNeural': 'ff_siwis',
+        'fr-FR-HenriNeural': 'fm_gaston',
+      };
+      const kokoroVoice = kokoroVoiceMap[voice] || 'am_adam';
 
-          const kokoroRes = await fetch(
-            `${process.env.KOKORO_API_URL}/tts?${params.toString()}`,
-            {
-              method: 'POST',
-              signal: AbortSignal.timeout(30000)
-            }
-          );
+      console.log(`[TTS] Kokoro → HF Space voice=${kokoroVoice} lang=${langCode}`);
 
-          if (kokoroRes.ok) {
-            const wavPath = audioPath.replace('.mp3', '.wav');
-            const audioBuffer = Buffer.from(await kokoroRes.arrayBuffer());
-            fs.writeFileSync(wavPath, audioBuffer);
-            await execAsync(`ffmpeg -y -i ${wavPath} ${audioPath}`);
-            console.log(`[TTS] Kokoro ✅ voice=${voice}`);
-            return;
-          } else {
-            const errText = await kokoroRes.text();
-            console.log(`[TTS] Kokoro HTTP ${kokoroRes.status}: ${errText}`);
-          }
-        } catch (e) {
-          console.log(`[TTS] Kokoro failed → Edge-TTS fallback: ${e.message}`);
+      const params = new URLSearchParams({
+        text: safeText,
+        voice: kokoroVoice,
+        lang: langCode
+      });
+
+      const kokoroRes = await fetch(
+        `${process.env.KOKORO_API_URL}/tts?${params.toString()}`,
+        {
+          method: 'POST',
+          signal: AbortSignal.timeout(30000)
         }
+      );
+
+      if (kokoroRes.ok) {
+        const wavPath = audioPath.replace('.mp3', '.wav');
+        const audioBuffer = Buffer.from(await kokoroRes.arrayBuffer());
+        fs.writeFileSync(wavPath, audioBuffer);
+        await execAsync(`ffmpeg -y -i ${wavPath} ${audioPath}`);
+        console.log(`[TTS] Kokoro ✅ voice=${kokoroVoice}`);
+        return;
+      } else {
+        const errText = await kokoroRes.text();
+        console.log(`[TTS] Kokoro HTTP ${kokoroRes.status}: ${errText}`);
       }
-      await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
-      console.log(`[TTS] Edge-TTS ✅ voice=${voice}`);
-    };
-    // ===== END: generateTTS with Kokoro via Hugging Face =====
+    } catch (e) {
+      console.log(`[TTS] Kokoro failed → Edge-TTS fallback: ${e.message}`);
+    }
+  }
+  await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
+  console.log(`[TTS] Edge-TTS ✅ voice=${voice}`);
+};
+// ===== END: generateTTS with Kokoro via Hugging Face =====
 
     await generateTTS();
 
