@@ -110,14 +110,12 @@ app.post('/save-section', async (req, res) => {
       .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\w\s.,!?'-]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-
-    // ===== START: generateTTS with Kokoro via Hugging Face =====
+// ===== START: generateTTS with Kokoro via Hugging Face =====
 const generateTTS = async () => {
   if (engine === 'kokoro' && process.env.KOKORO_API_URL) {
     try {
       const langCode = voice.startsWith('fr') ? 'fr-fr' : 'en-us';
 
-      // تحويل اسم الصوت من Edge-TTS إلى Kokoro
       const kokoroVoiceMap = {
         'en-US-AndrewNeural': 'am_adam',
         'en-US-BrianNeural': 'am_michael',
@@ -148,7 +146,7 @@ const generateTTS = async () => {
         `${process.env.KOKORO_API_URL}/tts?${params.toString()}`,
         {
           method: 'POST',
-          signal: AbortSignal.timeout(30000)
+          signal: AbortSignal.timeout(60000)  // ← 60 ثانية بدل 30
         }
       );
 
