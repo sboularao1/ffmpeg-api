@@ -1,8 +1,24 @@
 #!/usr/bin/env python3
 # ===== kokoro_tts.py =====
 import sys
-print(f"[kokoro_tts] Python: {sys.executable}", flush=True)
-print(f"[kokoro_tts] Path: {sys.path}", flush=True)
+import subprocess
+
+# تثبيت المكتبات في نفس Python executable
+result = subprocess.run([
+    sys.executable, '-m', 'pip', 'install',
+    'soundfile', 'kokoro', '--break-system-packages', '-q'
+], capture_output=True, text=True)
+
+print(f"[kokoro_tts] pip stdout: {result.stdout}", flush=True)
+print(f"[kokoro_tts] pip stderr: {result.stderr}", flush=True)
+print(f"[kokoro_tts] pip returncode: {result.returncode}", flush=True)
+
+# إعادة تحميل مسارات Python بعد التثبيت
+import importlib
+import site
+importlib.reload(site)
+
+# الآن نستورد
 import soundfile as sf
 from kokoro import KPipeline
 
