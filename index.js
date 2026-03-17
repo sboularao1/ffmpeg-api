@@ -18,7 +18,7 @@ const FONTS_DIR = '/tmp/fonts';
 
 // ===== START: FONTS URLs المُصحَّحة نهائياً =====
 const FONTS = {
-  cairo: { file: 'Cairo-Black.ttf', url: 'https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hOA-W1ToLQ.ttf' },
+  cairo: { file: 'Cairo-900.ttf', url: 'https://cdn.jsdelivr.net/fontsource/fonts/cairo@latest/arabic-900-normal.ttf' },
   tajawal:    { file: 'Tajawal-Regular.ttf',   url: 'https://github.com/google/fonts/raw/main/ofl/tajawal/Tajawal-Regular.ttf' },
   almarai:    { file: 'Almarai-Bold.ttf',      url: 'https://github.com/google/fonts/raw/main/ofl/almarai/Almarai-Bold.ttf' },
   montserrat: { file: 'Montserrat-Bold.ttf',   url: 'https://github.com/JulietaUla/Montserrat/raw/master/fonts/ttf/Montserrat-Bold.ttf' },
