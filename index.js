@@ -9,6 +9,54 @@ const execAsync = promisify(exec);
 const app = express();
 app.use(express.json({ limit: '50mb' }));
 
+// ===== START: Lightpanda scraper endpoint =====
+const { chromium } = require('@lightpanda/browser');
+
+app.post('/scrape', async (req, res) => {
+  const { url } = req.body;
+
+  if (!url) {
+    return res.status(400).json({ error: 'url is required' });
+  }
+
+  console.log(`[scrape] fetching: ${url}`);
+
+  let browser;
+  try {
+    browser = await chromium.launch();
+    const context = await browser.newContext();
+    const page = await context.newPage();
+
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+    // استخراج النص الخام من الصفحة
+    const content = await page.evaluate(() => {
+      // حذف العناصر غير المفيدة
+      const remove = ['script', 'style', 'nav', 'footer', 'header', 'aside', 'iframe'];
+      remove.forEach(tag => {
+        document.querySelectorAll(tag).forEach(el => el.remove());
+      });
+      return document.body?.innerText || document.body?.textContent || '';
+    });
+
+    // تنظيف النص
+    const clean = content
+      .replace(/\s+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+      .slice(0, 8000); // Groq يقبل حتى ~8000 كلمة
+
+    console.log(`[scrape] done, length=${clean.length}`);
+    res.json({ content: clean, source: url });
+
+  } catch (err) {
+    console.log(`[scrape] error: ${err.message}`);
+    res.status(500).json({ error: err.message, source: url });
+  } finally {
+    if (browser) await browser.close();
+  }
+});
+// ===== END: Lightpanda scraper endpoint =====
 // ✅ Health check — لـ UptimeRobot
 app.get('/', (req, res) => res.json({ status: 'ok' }));
 
