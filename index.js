@@ -103,8 +103,8 @@ app.post('/save-section', async (req, res) => {
     'english': 'en-US-JennyNeural'
   };
   const voice = requestedVoice || voiceMap[language?.toLowerCase()] || 'en-US-JennyNeural';
-  const engine = (language?.toLowerCase() === 'arabic') ? 'edge' : (tts_engine || 'edge');
-
+  const engine = (language?.toLowerCase() === 'arabic') ? 'edge' : (tts_engine || 'kokoro');
+  
   try {
     const safeText = text
       .replace(/[^\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\w\s.,!?'-]/g, ' ')
@@ -112,21 +112,18 @@ app.post('/save-section', async (req, res) => {
       .trim();
 
     const generateTTS = async () => {
-      if (engine === 'kokoro' && process.env.KOKORO_API_URL) {
+      if (engine === 'kokoro') {
         try {
-          const kokoroRes = await fetch(`${process.env.KOKORO_API_URL}/tts`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: safeText, voice }),
-            signal: AbortSignal.timeout(15000)
-          });
-          if (kokoroRes.ok) {
-            const wavPath = audioPath.replace('.mp3', '.wav');
-            fs.writeFileSync(wavPath, Buffer.from(await kokoroRes.arrayBuffer()));
-            await execAsync(`ffmpeg -y -i ${wavPath} ${audioPath}`);
-            console.log(`[TTS] Kokoro ✅ voice=${voice}`);
-            return;
-          }
+          // تحديد lang_code من اسم الصوت
+          const langCode = voice.startsWith('fr') ? 'fr-fr' : 'en-us';
+          const wavPath = audioPath.replace('.mp3', '.wav');
+          await execAsync(
+            `python3 kokoro_tts.py "${safeText.replace(/"/g, '\\"')}" "${voice}" "${wavPath}" "${langCode}"`,
+            { timeout: 30000 }
+          );
+          await execAsync(`ffmpeg -y -i ${wavPath} ${audioPath}`);
+          console.log(`[TTS] Kokoro ✅ voice=${voice}`);
+          return;
         } catch (e) {
           console.log(`[TTS] Kokoro failed → Edge-TTS fallback: ${e.message}`);
         }
