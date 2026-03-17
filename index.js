@@ -126,6 +126,7 @@ app.post('/save-section', async (req, res) => {
           return;
         } catch (e) {
           console.log(`[TTS] Kokoro failed → Edge-TTS fallback: ${e.message}`);
+          console.log(`[TTS] Kokoro stderr: ${e.stderr || 'none'}`);
         }
       }
       await execAsync(`python3 -m edge_tts --voice ${voice} --text "${safeText}" --write-media ${audioPath}`);
