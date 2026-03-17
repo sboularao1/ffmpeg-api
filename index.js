@@ -15,22 +15,15 @@ app.use(express.json({ limit: '50mb' }));
 // ================================================================
 
 const FONTS_DIR = '/tmp/fonts';
-// ===== START: FONTS URLs المُصحَّحة =====
+// ===== START: FONTS — إصلاح Cairo + إضافة Montserrat + Poppins =====
 const FONTS = {
-  cairo:   {
-    file: 'Cairo-Black.ttf',
-    url: 'https://github.com/google/fonts/raw/main/ofl/cairo/static/Cairo-Black.ttf'
-  },
-  tajawal: {
-    file: 'Tajawal-Regular.ttf',
-    url: 'https://github.com/google/fonts/raw/main/ofl/tajawal/Tajawal-Regular.ttf'
-  },
-  almarai: {
-    file: 'Almarai-Bold.ttf',
-    url: 'https://github.com/google/fonts/raw/main/ofl/almarai/Almarai-Bold.ttf'
-  }
+  cairo:       { file: 'Cairo-Black.ttf',       url: 'https://github.com/Gue3bara/Cairo/raw/master/fonts/ttf/Cairo-Black.ttf' },
+  tajawal:     { file: 'Tajawal-Regular.ttf',    url: 'https://github.com/google/fonts/raw/main/ofl/tajawal/Tajawal-Regular.ttf' },
+  almarai:     { file: 'Almarai-Bold.ttf',       url: 'https://github.com/google/fonts/raw/main/ofl/almarai/Almarai-Bold.ttf' },
+  montserrat:  { file: 'Montserrat-Bold.ttf',    url: 'https://github.com/google/fonts/raw/main/ofl/montserrat/static/Montserrat-Bold.ttf' },
+  poppins:     { file: 'Poppins-SemiBold.ttf',   url: 'https://github.com/google/fonts/raw/main/ofl/poppins/Poppins-SemiBold.ttf' }
 };
-// ===== END: FONTS URLs المُصحَّحة =====
+// ===== END: FONTS — إصلاح Cairo + إضافة Montserrat + Poppins =====
 
 const ensureFonts = async () => {
   if (!fs.existsSync(FONTS_DIR)) fs.mkdirSync(FONTS_DIR, { recursive: true });
@@ -55,7 +48,17 @@ const ensureFonts = async () => {
 
 ensureFonts();
 
-const getFont = (name) => path.join(FONTS_DIR, FONTS[name]?.file || FONTS.cairo.file);
+// ===== START: getFont بناءً على اللغة =====
+const getFont = (nameOrLang) => {
+  const langMap = {
+    'arabic':  'cairo',
+    'english': 'montserrat',
+    'french':  'poppins'
+  };
+  const key = langMap[nameOrLang] || nameOrLang || 'cairo';
+  return path.join(FONTS_DIR, FONTS[key]?.file || FONTS.cairo.file);
+};
+// ===== END: getFont بناءً على اللغة =====
 
 // ================================================================
 // BUILD VIDEO FILTERS — كل تأثيرات FFmpeg
@@ -164,7 +167,7 @@ const buildVideoFilters = (effects = {}, mediaType = 'video', audioDuration = 10
   // 13. Lower Third
   if (effects.lower_third && effects.lower_third_text) {
     const text = effects.lower_third_text.replace(/'/g, "\\'").replace(/:/g, "\\:");
-    const fontFile = getFont(effects.lower_third_font || 'cairo');
+    const fontFile = getFont(effects.lower_third_font || effects.language || 'cairo');
     const fontSize = effects.lower_third_fontsize ?? 28;
     const yPos = h - 70;
     filters.push(
@@ -175,7 +178,7 @@ const buildVideoFilters = (effects = {}, mediaType = 'video', audioDuration = 10
   // 14. Title Card
   if (effects.title_card && effects.title_text) {
     const text = effects.title_text.replace(/'/g, "\\'").replace(/:/g, "\\:");
-    const fontFile = getFont(effects.title_font || 'almarai');
+    const fontFile = getFont(effects.lower_third_font || effects.language || 'cairo');
     const fontSize = effects.title_fontsize ?? 48;
     const start = effects.title_start ?? 0;
     const dur = effects.title_duration ?? 2;
@@ -493,7 +496,7 @@ app.post('/save-section', async (req, res) => {
       hue_shift: requestedEffects?.hue_shift ?? false,
       lower_third: !!(on_screen_text),
       lower_third_text: on_screen_text || '',
-      lower_third_font: language === 'arabic' ? 'cairo' : 'tajawal',
+      lower_third_font: language === 'arabic' ? 'cairo' : language === 'french' ? 'poppins' : 'montserrat',
       lower_third_fontsize: 28,
       title_card: requestedEffects?.title_card ?? false,
       title_text: requestedEffects?.title_text ?? '',
