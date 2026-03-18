@@ -592,9 +592,9 @@ try {
     // FFmpeg
     if (mediaType === 'video') {
       if (musicBuffer) {
-        await execAsync(`ffmpeg -y -i "${videoPath}" -i "${audioPath}" -stream_loop -1 -i "${musicPath}" -t ${audioDuration} -filter_complex "[1:a]volume=1[tts];[2:a]volume=0.15[music];[tts][music]amix=inputs=2:duration=first[aout]" -map 0:v:0 -map "[aout]" -vf "${vfString}" -c:v libx264 -crf 35 -preset ultrafast -r 30 -c:a aac -strict experimental "${outputPath}"`);
+        await execAsync(`ffmpeg -y -stream_loop -1 -i "${videoPath}" -i "${audioPath}" -stream_loop -1 -i "${musicPath}" -t ${audioDuration} -filter_complex "[1:a]volume=1[tts];[2:a]volume=0.15[music];[tts][music]amix=inputs=2:duration=first[aout]" -map 0:v:0 -map "[aout]" -vf "${vfString}" -c:v libx264 -crf 35 -preset ultrafast -r 30 -c:a aac -strict experimental "${outputPath}"`);
       } else {
-        await execAsync(`ffmpeg -y -i "${videoPath}" -i "${audioPath}" -t ${audioDuration} -map 0:v:0 -map 1:a:0 -vf "${vfString}" -c:v libx264 -crf 35 -preset ultrafast -r 30 -c:a aac -strict experimental "${outputPath}"`);
+        await execAsync(`ffmpeg -y -stream_loop -1 -i "${videoPath}" -i "${audioPath}" -t ${audioDuration} -map 0:v:0 -map 1:a:0 -vf "${vfString}" -c:v libx264 -crf 35 -preset ultrafast -r 30 -c:a aac -strict experimental "${outputPath}"`);
       }
     } else {
       if (musicBuffer) {
