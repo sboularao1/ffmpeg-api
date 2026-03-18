@@ -18,17 +18,17 @@ def format_time(seconds):
     return f"{h}:{m:02d}:{s:02d}.{cs:02d}"
 
 def generate_ass(text, audio_duration, font_file, output_path):
-    # تقسيم النص إلى جمل
-    import re
-    sentences = re.split(r'[.!?؟،,،]\s*', text)
-    sentences = [s.strip() for s in sentences if len(s.strip()) > 2]
+    # تقسيم النص إلى chunks من 4 كلمات
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), 4):
+        chunks.append(' '.join(words[i:i+4]))
 
-    if not sentences:
-        sentences = [text]
+    if not chunks:
+        chunks = [text]
 
-    total_words = len(text.split())
-    
-    # ASS header
+    total_chunks = len(chunks)
+
     ass_content = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 640
@@ -37,34 +37,24 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Cairo Black,20,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,1,2,20,20,20,1
+Style: Default,Cairo Black,22,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,2,1,2,20,20,25,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
 
     current_time = 0.0
+    chunk_duration = audio_duration / total_chunks
 
-    for i, sentence in enumerate(sentences):
-        words = sentence.split()
-        if not words:
-            continue
+    for i, chunk in enumerate(chunks):
+        start = current_time
+        end = min(current_time + chunk_duration, audio_duration - 0.1)
 
-        sentence_words = len(words)
-        sentence_duration = (sentence_words / max(total_words, 1)) * audio_duration
-        sentence_end = min(current_time + sentence_duration + 0.3, audio_duration - 0.1)
+        reshaped = arabic_reshaper.reshape(chunk)
+        clean = reshaped.replace('\n', ' ').replace('{', '').replace('}', '')
 
-        # reshape العربية للعرض الصحيح
-        display_text = arabic_reshaper.reshape(sentence)
-        # تنظيف للـ ASS
-        display_text = display_text.replace('\n', ' ').replace('{', '').replace('}', '')
-
-        start_fmt = format_time(current_time)
-        end_fmt = format_time(sentence_end)
-
-        ass_content += f"Dialogue: 0,{start_fmt},{end_fmt},Default,,0,0,0,,{display_text}\n"
-
-        current_time = sentence_end + 0.05
+        ass_content += f"Dialogue: 0,{format_time(start)},{format_time(end)},Default,,0,0,0,,{clean}\n"
+        current_time = end + 0.02
 
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(ass_content)
